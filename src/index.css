@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 min-h-screen;
+    font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-pink-500 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-gradient-to-r from-secondary to-teal-400 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-3xl shadow-xl p-6 border-4 border-purple-300;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-2xl border-2 border-purple-300 focus:border-primary focus:ring-4 focus:ring-pink-200 outline-none text-lg;
+  }
+}
