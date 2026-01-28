@@ -301,29 +301,81 @@ export function speakFrench(text) {
 }
 
 // Speech Recognition
-export function startSpeechRecognition(onResult, onError) {
+export async function startSpeechRecognition(onResult, onError) {
+  // Check if browser supports speech recognition
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    onError('Spracherkennung wird in diesem Browser nicht unterstützt.');
+    onError('❌ Spracherkennung wird auf diesem Gerät nicht unterstützt.');
     return null;
   }
 
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
+  try {
+    // Request microphone permission first
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(track => track.stop()); // Stop the stream, we just needed permission
 
-  recognition.lang = 'de-DE';
-  recognition.continuous = false;
-  recognition.interimResults = false;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
 
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    onResult(transcript);
-  };
+    recognition.lang = 'de-DE';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
 
-  recognition.onerror = (event) => {
-    onError(`Fehler: ${event.error}`);
-  };
+    recognition.onstart = () => {
+      console.log('🎤 Mikrofon gestartet - bitte sprechen...');
+    };
 
-  recognition.start();
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      console.log('✅ Erkannt:', transcript);
+      onResult(transcript);
+    };
 
-  return recognition;
+    recognition.onerror = (event) => {
+      console.error('❌ Speech Recognition Error:', event.error);
+
+      let errorMessage = '';
+      switch(event.error) {
+        case 'no-speech':
+          errorMessage = 'Keine Sprache erkannt. Bitte versuche es nochmal.';
+          break;
+        case 'audio-capture':
+          errorMessage = 'Kein Mikrofon gefunden. Bitte überprüfe deine Geräteeinstellungen.';
+          break;
+        case 'not-allowed':
+          errorMessage = 'Mikrofon-Zugriff verweigert. Bitte erlaube den Mikrofon-Zugriff in den Browser-Einstellungen.';
+          break;
+        case 'network':
+          errorMessage = 'Netzwerkfehler. Bitte überprüfe deine Internetverbindung.';
+          break;
+        case 'aborted':
+          errorMessage = 'Aufnahme abgebrochen.';
+          break;
+        default:
+          errorMessage = `Fehler: ${event.error}`;
+      }
+
+      onError(errorMessage);
+    };
+
+    recognition.onend = () => {
+      console.log('🎤 Mikrofon gestoppt');
+    };
+
+    recognition.start();
+    return recognition;
+
+  } catch (error) {
+    console.error('❌ Mikrofon-Berechtigung Fehler:', error);
+
+    if (error.name === 'NotAllowedError') {
+      onError('🎤 Mikrofon-Zugriff verweigert.\n\nBitte erlaube den Mikrofon-Zugriff:\n1. Tippe auf das Schloss-Symbol in der Adressleiste\n2. Erlaube "Mikrofon"\n3. Lade die Seite neu');
+    } else if (error.name === 'NotFoundError') {
+      onError('❌ Kein Mikrofon gefunden. Bitte überprüfe deine Geräteeinstellungen.');
+    } else {
+      onError(`❌ Mikrofon-Fehler: ${error.message}`);
+    }
+
+    return null;
+  }
 }

@@ -9,6 +9,7 @@ export default function Translator() {
   const [isListening, setIsListening] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [direction, setDirection] = useState('de-fr'); // de-fr or fr-de
+  const [error, setError] = useState(null);
 
   const handleTranslate = async () => {
     if (!inputText.trim()) return;
@@ -26,16 +27,19 @@ export default function Translator() {
     }
   };
 
-  const handleSpeech = () => {
+  const handleSpeech = async () => {
     setIsListening(true);
+    setError(null);
 
-    startSpeechRecognition(
+    await startSpeechRecognition(
       (transcript) => {
         setInputText(transcript);
         setIsListening(false);
+        setError(null);
       },
-      (error) => {
-        console.error(error);
+      (errorMessage) => {
+        console.error(errorMessage);
+        setError(errorMessage);
         setIsListening(false);
       }
     );
@@ -109,6 +113,25 @@ export default function Translator() {
           {isTranslating ? '🔄 Übersetze...' : '✨ Übersetzen!'}
         </button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-100 border-2 border-red-400 rounded-2xl p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">⚠️</div>
+            <div className="flex-1">
+              <div className="font-bold text-red-800 mb-1">Fehler</div>
+              <div className="text-red-700 whitespace-pre-line">{error}</div>
+              <button
+                onClick={() => setError(null)}
+                className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Translation Result */}
       {translation && (
